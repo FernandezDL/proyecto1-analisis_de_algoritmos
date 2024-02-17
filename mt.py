@@ -4,156 +4,171 @@
 #
 # Finished:     22/11/2023
 #-------------------------------------------------------------------------------
+import copy
 import yaml
-
-class TapeNode:
-    def __init__(self, value, prev=None, nextNode=None):
-        self.value = value
-        self.prev = prev
-        self.nextNode = nextNode
-
-class TuringMachine:
-    def __init__(self, config_file):
-        with open(config_file, 'r', encoding='utf-8') as file:
-            self.config = yaml.safe_load(file)
-
-        # Configuración inicial de la máquina de Turing
-        self.states = self.config.get('q_states', {}).get('q_list', [])
-        self.initial_state = self.config.get('q_states', {}).get('initial', '')
-        self.final_state = self.config.get('q_states', {}).get('final', '')
-        self.alphabet = self.config.get('alphabet', [])
-        self.tape_alphabet = self.config.get('tape_alphabet', [])
-        self.transitions = self.config.get('delta', [])
-        self.simulation_strings = self.config.get('simulation_strings', [])
-        self.head = TapeNode(value=None)
-
-        # Estado actual y cinta
-        self.current_state = self.initial_state
-
-    def display_configuration(self):
-        print("Configuración de la Máquina de Turing:")
-        print(f"Estados: {self.states}")
-        print(f"Estado Inicial: {self.initial_state}")
-        print(f"Estado Final: {self.final_state}")
-        print(f"Alfabeto: {self.alphabet}")
-        print(f"Alfabeto de la Cinta: {self.tape_alphabet}")
-        print(f"Delta: {self.transitions}")
-        print(f"Cadenas de Simulación: {self.simulation_strings}")
-
-        self.load_transitions()
-
-    def load_transitions(self):
-        self.transition_dict = {}
-        for transition in self.transitions:
-            key = (transition['params']['initial_state'], transition['params']['tape_input'])
-            value = (transition['output']['final_state'], transition['output']['tape_output'], transition['output']['tape_displacement'])
-
-            # Almacenar múltiples transiciones para un mismo estado y símbolo
-            if key not in self.transition_dict:
-                self.transition_dict[key] = []
-            self.transition_dict[key].append(value)
-
-            print(f"Transición: {key} -> {value}")
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
     
-    def move_head(self, direction):
-        if direction == 'L':
-            if self.head.prev is None:  
-                new_node = TapeNode(value=' ')
-                new_node.nextNode = self.head
-                self.head.prev = new_node
-                self.head = new_node
-            else:
-                self.head = self.head.prev
-        elif direction == 'R':
-            if self.head.nextNode is None:
-                new_node = TapeNode(value=' ')
-                new_node.prev = self.head
-                self.head.nextNode = new_node
-                self.head = new_node
-            else:
-                self.head = self.head.nextNode
-
-    def get_possible_transitions(self, state, symbol):
-        return self.transition_dict.get((state, symbol), [])
-
-    def update_tape(self, write_symbol, move_direction):
-        # Actualizar el valor en la cinta
-        self.head.value = write_symbol if write_symbol is not None else self.head.value
-        # Mover la cabeza lectora/escritora
-        self.move_head(move_direction)
-    
-    def load_tape(self, input_string):
-        self.head = TapeNode(value=input_string[0])
-        current_node = self.head
-        for char in input_string[1:]:
-            new_node = TapeNode(value=char)
-            current_node.nextNode = new_node
-            new_node.prev = current_node
-            current_node = new_node
-
-    def simulate_step(self):
-        current_symbol = self.head.value if self.head.value is not None else ' '  # Manejo de espacios en blanco
-        possible_transitions = self.get_possible_transitions(self.current_state, current_symbol)
-
-        if not possible_transitions:
-            print(f"Transición no definida para el símbolo {current_symbol} y estado {self.current_state}")
-            return False
-
-        # Elige una transición de las posibles
-        next_state, write_symbol, move_direction = possible_transitions[0]
-        self.update_tape(write_symbol, move_direction)
-        self.current_state = next_state
-        return True
-    
-    def simulate(self):
-        for input_string in self.simulation_strings:
-            self.load_tape(input_string)
-
-        step_count = 1
-
-        while self.current_state != self.final_state:
-            print(f"Paso {step_count}: {self.display_tape(with_state=True)}")  # Mostrar el estado antes de cada paso
-            if not self.simulate_step():
-                break
-            step_count += 1
-
-        print(f"\nPaso Final {step_count}: {self.display_tape(with_state=True)}")  # Mostrar el estado final
-        print(f"Original: {self.display_tape(original=True)}")
-        print(f"Resultado: {self.display_tape()}")
-
-    def display_tape(self, original=False, with_state=False):
-        tape_str = ""
-        # Comenzar desde el nodo más a la izquierda
-        node = self.head
-        while node.prev:
-            node = node.prev
-
-        # Recorrer toda la cinta hasta el final
-        while node:
-            if node == self.head and with_state:
-                tape_str += f"[{self.current_state}] "
-            tape_value = node.value if node.value is not None else ' '
-            tape_str += f"[{tape_value}] "
-            node = node.nextNode
-
-        return tape_str.strip()
-
-def main():
-    tm = TuringMachine('Mt3.yaml')
-    tm.display_configuration()
-
-    for input_string in tm.simulation_strings:
-        print(f"\nSimulación para la cadena: {input_string}")
-
-        # Simular hasta que no haya más pasos posibles o se alcance el estado final
-        while tm.current_state != tm.final_state:
-            if not tm.simulate():
-                break
-
-        if tm.current_state == tm.final_state:
-            print("Cadena aceptada.")
+class Tape(object):   
+    blank_symbol = " " 
+    def __init__(self,
+                 tape_string = "",blank=" "):
+        self.__tape = dict((enumerate(tape_string)))
+        Tape.blank_symbol = blank
+        
+    def __str__(self):
+        s = ""
+        min_used_index = min(self.__tape.keys()) 
+        max_used_index = max(self.__tape.keys())
+        for i in range(min_used_index, max_used_index+1):
+            s += self.__tape[i]
+        return s    
+   
+    def __getitem__(self,index):
+        if index in self.__tape:
+            return self.__tape[index]
         else:
-            print("Cadena rechazada.")
+            return Tape.blank_symbol
 
-if __name__ == "__main__":
-    main()
+    def __setitem__(self, pos, char):
+        self.__tape[pos] = char 
+
+        
+class MultiTapeTuringMachine(object):
+    def __init__(
+        self, 
+        tapes = list[str],
+        blank_symbol = " ",
+        initial_state = "",
+        final_states = None,
+        transition_function = None , accept_states = None):
+        self.__blank_symbol = blank_symbol
+        self.__init = initial_state
+        self.tapes = tapes
+        self.__curr = 0
+        self.__tapes = [Tape(tape, self.__blank_symbol) for tape in tapes]
+        self.__head_positions = [0 for x in range(len(tapes))]
+        self.__current_state = initial_state
+        self.__immediate_description = None
+        self.__accept_states = accept_states
+        if transition_function == None:
+            self.__transition_function = {}
+        else:
+            self.__transition_function = transition_function
+        if final_states == None:
+            self.__final_states = set()
+        else:
+            self.__final_states = set(final_states)
+        
+    def evaluate_strings(self):
+        print("=================================")
+        
+        print("Result of the Turing machine calculation:")
+        string = "Input on Tape:\n"
+        for tape in self.__tapes:
+            tape_c = str(tape).replace(self.__blank_symbol, '')
+            string+= tape_c+" "
+        print(string)
+        print("---------------------------------")
+        i = 0
+        while not self.final():
+            self.step()
+            i+=1
+        print("---------------------------------")
+        if (self.__accept_states):
+            if self.__current_state in self.__accept_states:
+                print("String accepted")
+            else:
+                print("String not accepted")
+        else:
+            print("Machine has not accept nor reject")
+        print("---------------------------------")
+        # print("Result of the Turing machine calculation:")
+        # for tape in self.__tapes:
+        #     tape_c = str(tape).replace(self.__blank_symbol, '')
+        # print(tape_c)
+        # print("---------------------------------")
+        return
+    
+    
+    def step(self):
+        self.generate_immediate_description(True)
+        chars_under_heads = [self.__tapes[x][self.__head_positions[x]] for x in range(len(self.__head_positions))]
+        x = chars_under_heads
+        x.insert(0,self.__current_state)
+        x = tuple(x)
+        if x in self.__transition_function:
+            y = self.__transition_function[x]
+            for i in range(len(self.__tapes)):
+                self.__tapes[i][self.__head_positions[i]] = y[1][i]
+                if y[2][i] == "R":
+                    self.__head_positions[i] += 1
+                elif y[2][i] == "L":
+                    self.__head_positions[i] -= 1
+                elif y[2][i] == "S":
+                    self.__head_positions[i] -= 0
+            self.__current_state = y[0]
+        self.generate_immediate_description(False)
+            
+    def final(self):
+        if self.__current_state in self.__final_states:
+            return True
+        else:
+            return False
+        
+    def generate_immediate_description(self, first:bool):
+        # Es un set de descripciones inmediatas
+        if (first):
+            self.__immediate_description = []
+            for k in range(len(self.__tapes)):
+                tape = self.__tapes[k]
+                self.__immediate_description.append(copy.deepcopy(tape))
+                self.__immediate_description[k][self.__head_positions[k]]= bcolors.FAIL +  self.__current_state + bcolors.ENDC +self.__immediate_description[k][self.__head_positions[k]]
+        else:
+            string = ""
+            for k in range(len(self.__tapes)):
+                tape = self.__tapes[k]
+                immediate_description = copy.deepcopy(tape)
+                if k == 0:
+                    immediate_description[self.__head_positions[k]]= bcolors.FAIL +  self.__current_state + bcolors.ENDC+self.__immediate_description[k][self.__head_positions[k]]
+                else:
+                    immediate_description[self.__head_positions[k]]= bcolors.FAIL + bcolors.ENDC+self.__immediate_description[k][self.__head_positions[k]]
+                string+=str(self.__immediate_description[k])+" ├─ "+str(immediate_description)+"  "
+            print(string)
+            
+
+def createTouringMultiTapeFromFile(filename) -> MultiTapeTuringMachine: 
+    '''
+    Lee un archivo yaml, retorna una maquina de touring com la 
+    imformación leída en el yaml
+    '''
+
+    with open(filename, 'r') as yaml_file:
+        data = yaml.load(yaml_file,Loader=yaml.FullLoader)
+        inicial = data['q_states']['initial']
+        final = {val for val in data['q_states']['final']}
+        acc = {val for val in data['q_states']['accept']}
+        blank_symbol = data['blank']
+        transition_function = {}
+        simulation_strings = data['simulation_strings']
+        for params in data['delta']:
+            lista_name = params['params']['tape_input']
+            lista_name.insert(0, params['params']['initial_state'])
+            transition_function[tuple(lista_name)] = (params['output']['final_state'], params['output']['tape_output'], params['output']['tape_displacement'])
+        # print(transition_function)
+        
+        return MultiTapeTuringMachine(tapes= simulation_strings, blank_symbol= blank_symbol, initial_state = inicial, final_states=final,transition_function= transition_function, accept_states= acc)
+  
+t = createTouringMultiTapeFromFile("./turing.yaml")
+# create_turing_machine_graph("./turing4.yaml")
+# t = createTouringFromFile("./turing4.yaml")
+
+t.evaluate_strings()
