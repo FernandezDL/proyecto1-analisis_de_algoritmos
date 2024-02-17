@@ -167,7 +167,7 @@ def createTouringMultiTapeFromFile(filename) -> MultiTapeTuringMachine:
         
         return MultiTapeTuringMachine(tapes= simulation_strings, blank_symbol= blank_symbol, initial_state = inicial, final_states=final,transition_function= transition_function, accept_states= acc)
   
-t = createTouringMultiTapeFromFile("./turing.yaml")
+t = createTouringMultiTapeFromFile("./Fibonacci.yaml")
 # create_turing_machine_graph("./turing4.yaml")
 # t = createTouringFromFile("./turing4.yaml")
 
