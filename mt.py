@@ -78,10 +78,8 @@ class MultiTapeTuringMachine(object):
             string+= tape_c+" "
         print(string)
         print("---------------------------------")
-        i = 0
         while not self.final():
             self.step()
-            i+=1
         print("---------------------------------")
         if (self.__accept_states):
             if self.__current_state in self.__accept_states:
@@ -91,12 +89,14 @@ class MultiTapeTuringMachine(object):
         else:
             print("Machine has not accept nor reject")
         print("---------------------------------")
-        # print("Result of the Turing machine calculation:")
-        # for tape in self.__tapes:
-        #     tape_c = str(tape).replace(self.__blank_symbol, '')
-        # print(tape_c)
-        # print("---------------------------------")
-        return
+        print("Result of the Turing machine calculation:")
+        tapes = []
+        for k in range(len(self.__tapes)):
+            tape_c = str(self.__tapes[k]).replace(self.__blank_symbol, '')
+            print("tape "+str(k)+":"+tape_c)
+            tapes.append(tape_c)
+        print("---------------------------------")
+        return tapes
     
     
     def step(self):
@@ -171,4 +171,7 @@ t = createTouringMultiTapeFromFile("./Fibonacci.yaml")
 # create_turing_machine_graph("./turing4.yaml")
 # t = createTouringFromFile("./turing4.yaml")
 
-t.evaluate_strings()
+tapes = t.evaluate_strings()
+
+num_fibonacci = len(tapes[0])/1.0
+print("Fibonnaci number: "+str(num_fibonacci))
