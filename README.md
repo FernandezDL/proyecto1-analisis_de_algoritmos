@@ -67,7 +67,7 @@ Comprender, de mejor manera, la notación O en el tiempo de ejecución de un alg
 - Máquinas de Turing
 - Transiciones de una máquina de Turing
 - Notación asintótica O
-- Suceción de Fibonacci
+- Sucesión de Fibonacci
 
 ## Integrantes
 -Diana Lucía Fernández Villatoro - 21747
