@@ -8,6 +8,7 @@
 - [Convenciones utilizadas](https://github.com/FernandezDL/proyecto1-analisis_de_algoritmos?tab=readme-ov-file#convenciones-utilizadas)
   - [Archivo Yaml](https://github.com/FernandezDL/proyecto1-analisis_de_algoritmos?tab=readme-ov-file#archivo-yaml)
 - [Temas vistos](https://github.com/FernandezDL/proyecto1-analisis_de_algoritmos?tab=readme-ov-file#temas-vistos)
+- [Documento](https://github.com/FernandezDL/proyecto1-analisis_de_algoritmos?tab=readme-ov-file#documento)
 - [Integrantes](https://github.com/FernandezDL/proyecto1-analisis_de_algoritmos?tab=readme-ov-file#integrantes)
 
 ## Descripción 
@@ -68,6 +69,9 @@ Comprender, de mejor manera, la notación O en el tiempo de ejecución de un alg
 - Transiciones de una máquina de Turing
 - Notación asintótica O
 - Sucesión de Fibonacci
+
+## Documento
+Dentro del [documento](https://docs.google.com/document/d/1W6obe05NTC72kWp2WSZXfGYj9MBrQgc-08Cyx9WeQVo/edit?usp=sharing) se encuentra desarrollado el _punto 5: análisis empírico_ del proyecto
 
 ## Integrantes
 -Diana Lucía Fernández Villatoro - 21747
